@@ -1,9 +1,13 @@
+export function supportsViewTransitions() {
+  return (
+    typeof document !== "undefined" &&
+    "startViewTransition" in document &&
+    !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
 export function withViewTransition(callback: () => void | Promise<void>) {
-  if (
-    typeof document === "undefined" ||
-    !("startViewTransition" in document) ||
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  ) {
+  if (!supportsViewTransitions()) {
     return Promise.resolve(callback());
   }
 
@@ -17,5 +21,5 @@ export function withViewTransition(callback: () => void | Promise<void>) {
     return Promise.resolve(callback());
   }
 
-  return startViewTransition(callback).finished;
+  return startViewTransition.call(document, callback).finished;
 }

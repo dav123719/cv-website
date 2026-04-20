@@ -79,7 +79,7 @@ export function SignInForm({ callbackUrl, googleEnabled }: SignInFormProps) {
         <button
           type="submit"
           disabled={isPending}
-          className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-zinc-950 shadow-lg shadow-black/20 transition duration-200 hover:-translate-y-0.5 hover:bg-zinc-100 active:translate-y-0 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isPending ? "Signing in..." : "Sign in"}
         </button>
@@ -88,7 +88,7 @@ export function SignInForm({ callbackUrl, googleEnabled }: SignInFormProps) {
           <button
             type="button"
             onClick={submitGoogle}
-            className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+            className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white px-5 py-3 text-sm font-semibold text-zinc-950 shadow-lg shadow-black/20 transition duration-200 hover:-translate-y-0.5 hover:bg-zinc-100 active:translate-y-0 active:scale-[0.985]"
           >
             Continue with Google
           </button>

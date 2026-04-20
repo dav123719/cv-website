@@ -11,13 +11,35 @@ export type FeaturedProject = {
   accent: ProjectAccent;
   preset: ProjectPreset;
   assetPath: string;
+  gallery?: ProjectMediaItem[];
+  modelParts?: ModelPartDefinition[];
 };
 
-export type ExperienceEntry = {
+export type ProjectMediaItem = {
+  type: "photo" | "model";
+  label: string;
+  caption: string;
+  src?: string;
+};
+
+export type ModelPartDefinition = {
+  id: string;
+  label: string;
+  match: string[];
+};
+
+export type ResumeRelatedItem = {
+  title: string;
+  summary: string;
+};
+
+export type ResumeEntry = {
   title: string;
   subtitle: string;
   date: string;
   summary: string;
+  relatedLabel?: string;
+  relatedItems?: ResumeRelatedItem[];
 };
 
 export type ToolEntry = {
@@ -45,10 +67,6 @@ export const siteContent = {
     linkedin: "https://www.linkedin.com/in/d%C4%81vis-zv%C4%ABgulis-91383b34b/",
     github: "https://github.com/dav123719"
   },
-  heroPoints: [
-    "Electrical engineering student, 6th semester",
-    "Technical CAD, PCB, and prototype-focused work"
-  ],
   stats: [
     { label: "Focus", value: "PCB + CAD + 3D" },
     { label: "Preferred roles", value: "3D CAD / Hardware" }
@@ -69,7 +87,40 @@ export const siteContent = {
       tags: ["Fusion 360", "3D print", "mechanical integration", "functional prototype"],
       accent: "red",
       preset: "sim-wheel",
-      assetPath: "/projects/simracing-wheel"
+      assetPath: "/models/simracing-wheel.glb",
+      gallery: [
+        {
+          type: "photo",
+          label: "Final build",
+          caption: "Real wheel assembly photo slot for the finished print and mounting."
+        },
+        {
+          type: "photo",
+          label: "Motor interface",
+          caption: "Close-up photo slot for the motor mount and wheel-to-motor connection."
+        },
+        {
+          type: "model",
+          label: "Interactive CAD",
+          caption: "Structured GLB prepared for exploded CAD inspection.",
+          src: "/models/simracing-wheel.glb"
+        },
+        {
+          type: "photo",
+          label: "Print setup",
+          caption: "Future photo slot for slicer orientation, supports, and surface finish."
+        },
+        {
+          type: "photo",
+          label: "Assembly detail",
+          caption: "Future photo slot for fasteners, inserts, and mounted hardware."
+        }
+      ],
+      modelParts: [
+        { id: "wheel-shell", label: "Dark shell", match: ["black_powdercoat", "graphite"] },
+        { id: "light-details", label: "Light details", match: ["warm_white"] },
+        { id: "red-details", label: "Red details", match: ["dark_red"] }
+      ]
     },
     {
       slug: "elevator-model",
@@ -85,7 +136,40 @@ export const siteContent = {
       tags: ["Fusion 360", "mechanical system", "motor control", "3D print"],
       accent: "crimson",
       preset: "elevator",
-      assetPath: "/projects/elevator-model"
+      assetPath: "/models/elevator-model.glb",
+      gallery: [
+        {
+          type: "photo",
+          label: "Full rig",
+          caption: "Real elevator assembly photo slot showing the complete build."
+        },
+        {
+          type: "photo",
+          label: "Drive system",
+          caption: "Photo slot for the belt, tensioning, motor, and moving assembly."
+        },
+        {
+          type: "model",
+          label: "Interactive CAD",
+          caption: "Structured GLB prepared for exploded frame and mechanism inspection.",
+          src: "/models/elevator-model.glb"
+        },
+        {
+          type: "photo",
+          label: "Cabin detail",
+          caption: "Future photo slot for cabin, guide rails, and moving interface."
+        },
+        {
+          type: "photo",
+          label: "Control electronics",
+          caption: "Future photo slot for Arduino, mini FOC driver, and wiring."
+        }
+      ],
+      modelParts: [
+        { id: "frame-panels", label: "Frame panels", match: ["warm_white"] },
+        { id: "dark-structure", label: "Dark structure", match: ["black_powdercoat", "graphite"] },
+        { id: "red-hardware", label: "Red hardware", match: ["dark_red"] }
+      ]
     },
     {
       slug: "h-bridge-driver",
@@ -101,7 +185,24 @@ export const siteContent = {
       tags: ["KiCad", "SMD", "PCB layout", "high current"],
       accent: "steel",
       preset: "pcb",
-      assetPath: "/projects/h-bridge-driver"
+      assetPath: "/projects/h-bridge-driver",
+      gallery: [
+        {
+          type: "photo",
+          label: "PCB close-up",
+          caption: "Photo slot for the assembled H-bridge board."
+        },
+        {
+          type: "photo",
+          label: "Test setup",
+          caption: "Photo slot for the board wired into a motor demonstration."
+        },
+        {
+          type: "model",
+          label: "Procedural model",
+          caption: "Current viewer preset represents the board concept until a CAD/PCB asset is added."
+        }
+      ]
     },
   ] as FeaturedProject[],
   experience: [
@@ -110,18 +211,60 @@ export const siteContent = {
       subtitle: "3D modeling and printing",
       date: "Commercial work",
       summary:
-        "Designed and printed multiple scale exhibition models for marketing use, translating technical source geometry into durable presentation pieces optimized for printability, strength, fit, and finish quality. That commercial work established the same production mindset carried into the project section below."
+        "Broader workplace work centered on turning technical source geometry into durable exhibition models for marketing use. The emphasis was on printability, strength, fit, and finish so the pieces held up as presentation assets, not just one-off prototypes.",
+      relatedLabel: "Work scope",
+      relatedItems: [
+        {
+          title: "Scale exhibition models",
+          summary: "Commercial presentation pieces translated from technical source geometry."
+        },
+        {
+          title: "Print-ready revisions",
+          summary: "Iterated part orientation, support strategy, and fit to keep the parts robust."
+        },
+        {
+          title: "Finish and durability",
+          summary: "Kept the output clean and sturdy enough for repeated handling and display."
+        }
+      ]
     }
-  ] as ExperienceEntry[],
+  ] as ResumeEntry[],
   education: [
     {
       title: "University of Southern Denmark",
       subtitle: "Bachelor in Electrical Engineering (Electronics)",
       date: "Ongoing",
       summary:
-        "Relevant focus areas include electronic circuit design, embedded systems, control systems, microchip design, and 3D modeling and prototyping."
+        "Relevant focus areas include electronic circuit design, embedded systems, control systems, microchip design, and 3D modeling and prototyping.",
+      relatedLabel: "Linked projects",
+      relatedItems: [
+        {
+          title: "H-bridge motor driver",
+          summary: "KiCad PCB work built for an RC car and later used as a demonstrator for the elevator project."
+        },
+        {
+          title: "Elevator scale model",
+          summary: "A multi-floor motion system with cabin, counterweight, BLDC drive, and Arduino Nano control."
+        }
+      ]
     }
-  ],
+  ] as ResumeEntry[],
+  independentProjects: [
+    {
+      title: "Self-directed prototype",
+      subtitle: "Independent build",
+      date: "Personal work",
+      summary:
+        "Williams-inspired simracing wheel designed in Fusion 360 and printed on an Ender 3 V2, with motor mounting and wheel-to-motor integration treated like a self-directed prototype rather than a formal course assignment.",
+      relatedLabel: "Prototype link",
+      relatedItems: [
+        {
+          title: "Simracing wheel",
+          summary: "Self-directed Fusion 360 build with printability and assembly constraints carried through the design."
+        }
+      ]
+    }
+  ] as ResumeEntry[],
   languages: ["Latvian - Native", "English - Professional"],
   toolGroups: [
     {

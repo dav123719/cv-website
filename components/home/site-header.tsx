@@ -88,18 +88,18 @@ export function SiteHeader({ name, role, location, navItems, className }: SiteHe
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--background)_82%,transparent)] backdrop-blur-2xl",
+        "sticky top-0 z-40 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--background)_88%,transparent)] shadow-[0_1px_0_rgba(255,255,255,0.02)] backdrop-blur-2xl",
         className
       )}
     >
-      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8">
         <div className="min-w-0">
           <a href="#top" className="block" onClick={(event) => handleAnchorNavigation(event, "#top")}>
-            <p className="font-heading text-lg font-semibold tracking-tight text-[var(--foreground)] sm:text-xl">
+            <p className="font-heading text-base font-semibold tracking-tight text-[var(--foreground)] sm:text-xl">
               {name}
             </p>
           </a>
-          <p className="mt-1 text-xs uppercase tracking-[0.26em] text-[var(--muted)]">
+          <p className="mt-1 hidden text-xs uppercase tracking-[0.22em] text-[var(--muted)] lg:block lg:tracking-[0.26em]">
             {role} <span className="mx-2 text-[var(--border)]">/</span> {location}
           </p>
         </div>
@@ -121,7 +121,7 @@ export function SiteHeader({ name, role, location, navItems, className }: SiteHe
           <button
             type="button"
             onClick={cycleTheme}
-            className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--panel)] px-4 py-2 text-sm font-medium text-[var(--foreground)] transition duration-300 hover:-translate-y-0.5 hover:border-[var(--accent)] hover:bg-[var(--panel-strong)] hover:shadow-[0_14px_28px_rgba(0,0,0,0.12)]"
+            className="opaque-button inline-flex items-center gap-2 rounded-full border border-[var(--border)] px-3 py-2 text-sm font-medium text-[var(--foreground)] sm:px-4"
             aria-label={`Theme mode: ${themeLabel}`}
           >
             {themeMode === "system" ? (
@@ -137,9 +137,9 @@ export function SiteHeader({ name, role, location, navItems, className }: SiteHe
           <a
             href="#contact"
             onClick={(event) => handleAnchorNavigation(event, "#contact")}
-            className="inline-flex items-center gap-2 rounded-full bg-[var(--foreground)] px-4 py-2 text-sm font-semibold text-[var(--background)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(0,0,0,0.18)]"
+            className="button-primary px-3 py-2 text-sm sm:px-4"
           >
-            Contact
+            <span className="hidden sm:inline">Contact</span>
             <ArrowUpRight className="h-4 w-4" />
           </a>
         </div>

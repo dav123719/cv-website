@@ -2,10 +2,13 @@
 
 :root {
   color-scheme: dark;
+  --ease-premium: cubic-bezier(0.22, 1, 0.36, 1);
   --background: #08090c;
   --background-alt: #0f1319;
   --panel: rgba(15, 19, 25, 0.78);
   --panel-strong: rgba(18, 23, 31, 0.92);
+  --control: #111722;
+  --control-strong: #1a2230;
   --foreground: #f4f7fb;
   --muted: #9da7b6;
   --border: rgba(255, 255, 255, 0.08);
@@ -20,6 +23,8 @@
   --background-alt: #eceff3;
   --panel: rgba(255, 255, 255, 0.72);
   --panel-strong: rgba(255, 255, 255, 0.94);
+  --control: #ffffff;
+  --control-strong: #f7f8fb;
   --foreground: #0c0f14;
   --muted: #697284;
   --border: rgba(12, 15, 20, 0.08);
@@ -50,6 +55,21 @@ body {
   transition:
     background-color 240ms ease,
     color 240ms ease;
+}
+
+button,
+input,
+textarea,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 72%, white);
+  outline-offset: 3px;
 }
 
 a {
@@ -108,6 +128,9 @@ a {
 
 .button-primary,
 .button-secondary {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
@@ -116,24 +139,132 @@ a {
   font-size: 0.95rem;
   font-weight: 700;
   transition:
+    transform 220ms var(--ease-premium),
     border-color 180ms ease,
     background-color 180ms ease,
-    color 180ms ease;
+    color 180ms ease,
+    box-shadow 220ms var(--ease-premium);
+}
+
+.button-primary::before,
+.button-secondary::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(120deg, transparent 0%, color-mix(in srgb, white 22%, transparent) 48%, transparent 100%);
+  opacity: 0;
+  transform: translateX(-55%);
+  transition:
+    opacity 220ms var(--ease-premium),
+    transform 420ms var(--ease-premium);
 }
 
 .button-primary {
-  background: var(--foreground);
-  color: var(--background);
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 96%, white 4%), #9f1d18),
+    var(--accent);
+  color: white;
+  box-shadow: 0 16px 36px color-mix(in srgb, var(--accent) 24%, transparent);
 }
 
 .button-secondary {
-  border: 1px solid var(--border);
-  background: var(--panel);
+  border: 1px solid color-mix(in srgb, var(--border) 78%, var(--foreground) 12%);
+  background: var(--control);
   color: var(--foreground);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--foreground) 5%, transparent);
 }
 
 .button-primary:hover,
 .button-secondary:hover {
+  transform: translateY(-2px);
+}
+
+.button-primary:hover::before,
+.button-secondary:hover::before {
+  opacity: 1;
+  transform: translateX(55%);
+}
+
+.button-primary:hover {
+  box-shadow: 0 22px 46px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.button-secondary:hover {
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
+  background: var(--control-strong);
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+
+.button-primary:active,
+.button-secondary:active {
+  transform: translateY(0) scale(0.985);
+}
+
+.opaque-button {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--control) 92%, var(--panel) 8%);
+  box-shadow:
+    0 12px 26px color-mix(in srgb, var(--foreground) 5%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 9%, transparent);
+  backdrop-filter: blur(10px);
+  transition:
+    transform 220ms var(--ease-premium),
+    border-color 220ms ease,
+    background-color 220ms ease,
+    color 220ms ease,
+    box-shadow 220ms var(--ease-premium);
+}
+
+.opaque-button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 46%);
+  opacity: 0;
+  transition: opacity 220ms var(--ease-premium);
+}
+
+.opaque-button:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
+  background: color-mix(in srgb, var(--control-strong) 94%, var(--panel) 6%);
+  box-shadow:
+    0 16px 34px color-mix(in srgb, var(--foreground) 8%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 12%, transparent);
+}
+
+.opaque-button:hover::after {
+  opacity: 1;
+}
+
+.opaque-button:active {
+  transform: translateY(0) scale(0.985);
+}
+
+.premium-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--panel-strong) 88%, transparent), color-mix(in srgb, var(--panel) 94%, transparent)),
+    var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.premium-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent, color-mix(in srgb, var(--foreground) 7%, transparent), transparent) top / 100% 1px no-repeat,
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 12%, transparent), transparent 34%);
+  opacity: 0.9;
 }
 
 html.theme-changing body,
@@ -194,6 +325,38 @@ html.theme-changing * {
   border: 1px solid var(--border);
   background: var(--panel);
   padding: 1.25rem;
+}
+
+.project-media-viewport {
+  --media-gap: 0.5rem;
+  --media-card-width: calc((100% - (var(--media-gap) * 2)) / 3);
+  height: 10.25rem;
+  overflow: hidden;
+  border-radius: 1.15rem;
+}
+
+.project-media-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--media-card-width);
+  gap: var(--media-gap);
+  height: 100%;
+  will-change: transform;
+}
+
+.project-media-card {
+  height: 100%;
+}
+
+.project-media-card__visual {
+  height: 4.7rem;
+}
+
+@media (max-width: 640px) {
+  .project-media-viewport {
+    --media-card-width: min(78vw, 18rem);
+    height: 10.15rem;
+  }
 }
 
 @keyframes fadeUp {

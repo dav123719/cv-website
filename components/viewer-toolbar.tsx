@@ -1,7 +1,7 @@
 "use client";
 
-import type { ModelPreset } from "./model-scenes";
 import type { ReactNode } from "react";
+import type { ModelPartDefinition, ModelPreset } from "./model-scenes";
 
 type ToolbarButtonProps = {
   active?: boolean;
@@ -11,48 +11,26 @@ type ToolbarButtonProps = {
   ariaLabel?: string;
 };
 
-function ToolbarButton({
-  active,
-  children,
-  onClick,
-  title,
-  ariaLabel,
-}: ToolbarButtonProps) {
+function ToolbarButton({ active, children, onClick, title, ariaLabel }: ToolbarButtonProps) {
   return (
     <button
       type="button"
       onClick={onClick}
       title={title}
       aria-label={ariaLabel}
+      aria-pressed={active}
+      className="inline-flex items-center justify-center gap-2 rounded-full px-3.5 py-2 text-[0.8rem] tracking-[0.02em] transition duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.985]"
       style={{
         appearance: "none",
-        border: "1px solid rgba(255,255,255,0.14)",
+        border: active ? "1px solid rgba(248,113,113,0.52)" : "1px solid rgba(255,255,255,0.16)",
         background: active
-          ? "linear-gradient(180deg, rgba(220,38,38,0.22), rgba(255,255,255,0.06))"
-          : "rgba(10,10,12,0.72)",
-        color: active ? "#fff" : "rgba(255,255,255,0.78)",
-        padding: "0.62rem 0.85rem",
-        borderRadius: 999,
-        fontSize: "0.8rem",
-        letterSpacing: "0.02em",
-        cursor: "pointer",
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "0.45rem",
-        transition:
-          "transform 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease",
-        boxShadow: active ? "0 0 0 1px rgba(220,38,38,0.35)" : "none",
+          ? "linear-gradient(180deg, rgba(220,38,38,0.95), rgba(127,29,29,0.96))"
+          : "linear-gradient(180deg, rgba(28,32,40,0.98), rgba(12,14,18,0.98))",
+        color: active ? "#fff" : "rgba(255,255,255,0.8)",
+        boxShadow: active
+          ? "0 12px 28px rgba(220,38,38,0.26), inset 0 1px 0 rgba(255,255,255,0.16)"
+          : "0 10px 24px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.08)",
         backdropFilter: "blur(16px)",
-      }}
-      onPointerDown={(event) => {
-        event.currentTarget.style.transform = "translateY(1px) scale(0.99)";
-      }}
-      onPointerUp={(event) => {
-        event.currentTarget.style.transform = "translateY(0) scale(1)";
-      }}
-      onPointerLeave={(event) => {
-        event.currentTarget.style.transform = "translateY(0) scale(1)";
       }}
     >
       {children}
@@ -65,11 +43,12 @@ export interface ViewerToolbarProps {
   fullscreen: boolean;
   onPresetChange: (preset: ModelPreset) => void;
   onReset: () => void;
+  onSetExplodeProgress: (value: number) => void;
   onToggleFullscreen: () => void;
-  onToggleWireframe: () => void;
+  partDefinitions?: readonly ModelPartDefinition[];
   title: string;
   subtitle?: string;
-  wireframe: boolean;
+  explodeProgress: number;
   presetOptions?: Array<{ id: ModelPreset; label: string }>;
 }
 
@@ -85,13 +64,16 @@ export function ViewerToolbar({
   fullscreen,
   onPresetChange,
   onReset,
+  onSetExplodeProgress,
   onToggleFullscreen,
-  onToggleWireframe,
+  partDefinitions = [],
   title,
   subtitle,
-  wireframe,
+  explodeProgress,
   presetOptions = PRESET_LABELS,
 }: ViewerToolbarProps) {
+  const hasInspectionControls = partDefinitions.length > 0;
+
   return (
     <div
       style={{
@@ -174,19 +156,7 @@ export function ViewerToolbar({
             gap: "0.5rem",
           }}
         >
-          <ToolbarButton
-            active={wireframe}
-            onClick={onToggleWireframe}
-            title="Toggle wireframe view"
-            ariaLabel="Toggle wireframe view"
-          >
-            Wireframe
-          </ToolbarButton>
-          <ToolbarButton
-            onClick={onReset}
-            title="Reset orbit and camera"
-            ariaLabel="Reset orbit and camera"
-          >
+          <ToolbarButton onClick={onReset} title="Reset model, orbit, and camera" ariaLabel="Reset model, orbit, and camera">
             Reset
           </ToolbarButton>
           <ToolbarButton
@@ -204,17 +174,23 @@ export function ViewerToolbar({
         style={{
           pointerEvents: "auto",
           display: "flex",
-          flexWrap: "wrap",
-          alignItems: "center",
-          gap: "0.5rem",
-          justifyContent: "space-between",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          gap: "0.7rem",
         }}
       >
         <div
+          role="tablist"
+          aria-label="Viewer presets"
           style={{
-            display: "flex",
+            display: "inline-flex",
             flexWrap: "wrap",
-            gap: "0.45rem",
+            gap: "0.4rem",
+            padding: "0.35rem",
+            borderRadius: 999,
+            border: "1px solid rgba(255,255,255,0.1)",
+            background: "rgba(6,6,8,0.5)",
+            backdropFilter: "blur(16px)",
           }}
         >
           {presetOptions.map((item) => (
@@ -230,20 +206,64 @@ export function ViewerToolbar({
           ))}
         </div>
 
-        <div
-          style={{
-            color: "rgba(255,255,255,0.62)",
-            fontSize: "0.82rem",
-            letterSpacing: "0.01em",
-            padding: "0.45rem 0.75rem",
-            borderRadius: 999,
-            border: "1px solid rgba(255,255,255,0.08)",
-            background: "rgba(6,6,8,0.5)",
-            backdropFilter: "blur(14px)",
-          }}
-        >
-          Drag to orbit
-        </div>
+        {hasInspectionControls ? (
+          <div
+            aria-label="Exploded view controls"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.65rem",
+              padding: "0.45rem 0.65rem",
+              borderRadius: 999,
+              border: "1px solid rgba(255,255,255,0.1)",
+              background: "rgba(6,6,8,0.5)",
+              backdropFilter: "blur(16px)",
+            }}
+          >
+            <label
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.55rem",
+                minHeight: "2.35rem",
+                padding: "0 0.45rem",
+                borderRadius: 999,
+                color: "rgba(255,255,255,0.8)",
+              }}
+            >
+              <span style={{ fontSize: "0.76rem", textTransform: "uppercase", letterSpacing: "0.12em" }}>
+                Closed
+              </span>
+              <input
+                aria-label="Exploded view amount"
+                max={1}
+                min={0}
+                onChange={(event) => onSetExplodeProgress(Number(event.currentTarget.value))}
+                step={0.01}
+                style={{ width: 180, accentColor: "#ef4444" }}
+                type="range"
+                value={explodeProgress}
+              />
+              <span style={{ fontSize: "0.76rem", textTransform: "uppercase", letterSpacing: "0.12em" }}>
+                Exploded
+              </span>
+              <output
+                style={{
+                  minWidth: "2.4rem",
+                  borderRadius: 999,
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  padding: "0.22rem 0.45rem",
+                  textAlign: "center",
+                  fontSize: "0.72rem",
+                  fontVariantNumeric: "tabular-nums",
+                  color: "rgba(255,255,255,0.72)",
+                }}
+              >
+                {Math.round(explodeProgress * 100)}%
+              </output>
+            </label>
+          </div>
+        ) : null}
       </div>
     </div>
   );

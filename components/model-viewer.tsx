@@ -6,8 +6,8 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 import * as THREE from "three";
 import { ViewerToolbar } from "./viewer-toolbar";
-import type { ModelPreset } from "./model-scenes";
-import { ViewerScene } from "./model-scenes";
+import type { ModelPartDefinition, ModelPreset } from "./model-scenes";
+import { defaultSceneLighting, ViewerScene } from "./model-scenes";
 
 declare global {
   interface Window {
@@ -28,6 +28,7 @@ export interface ModelViewerProps {
   preset?: ModelPreset;
   presetOptions?: Array<{ id: ModelPreset; label: string }>;
   onPresetChange?: (preset: ModelPreset) => void;
+  partDefinitions?: readonly ModelPartDefinition[];
   scrollProgress?: number;
   subtitle?: string;
   title?: string;
@@ -97,6 +98,8 @@ function getPresetCamera(preset: ModelPreset) {
   }
 }
 
+const EMPTY_PART_DEFINITIONS: readonly ModelPartDefinition[] = [];
+
 export function ModelViewer({
   className,
   height = 560,
@@ -104,6 +107,7 @@ export function ModelViewer({
   preset: controlledPreset,
   presetOptions,
   onPresetChange,
+  partDefinitions = EMPTY_PART_DEFINITIONS,
   scrollProgress = 0,
   subtitle = "A hardware-first 3D presentation layer for technical portfolios, tuned for fast previews and controlled inspection.",
   title = "Interactive 3D portfolio viewer",
@@ -111,10 +115,11 @@ export function ModelViewer({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const controlsRef = useRef<any>(null);
   const cameraRef = useRef<THREE.Camera | null>(null);
+  const [explodeProgress, setExplodeProgress] = useState(0);
   const [preset, setPreset] = useState<ModelPreset>(initialPreset);
-  const [wireframe, setWireframe] = useState(false);
   const [viewerKey, setViewerKey] = useState(0);
   const { fullscreen, toggleFullscreen } = useFullscreenState(containerRef);
+  const lighting = defaultSceneLighting;
 
   useEffect(() => {
     setPreset(initialPreset);
@@ -126,6 +131,10 @@ export function ModelViewer({
     setPreset(controlledPreset);
     setViewerKey((value) => value + 1);
   }, [controlledPreset]);
+
+  useEffect(() => {
+    setExplodeProgress(0);
+  }, [partDefinitions, preset]);
 
   useEffect(() => {
     if (process.env.NODE_ENV === "production") {
@@ -142,11 +151,22 @@ export function ModelViewer({
   const camera = useMemo(() => getPresetCamera(preset), [preset]);
 
   const resetView = () => {
+    setExplodeProgress(0);
+    const controls = controlsRef.current;
+    cameraRef.current?.position.set(...camera.position);
+    if (controls) {
+      controls.reset?.();
+      controls.object?.position?.set(...camera.position);
+      controls.target?.set(...camera.target);
+      controls.object?.updateProjectionMatrix?.();
+      controls.update?.();
+    }
     setViewerKey((value) => value + 1);
   };
 
   const handlePresetChange = (nextPreset: ModelPreset) => {
     setPreset(nextPreset);
+    setExplodeProgress(0);
     setViewerKey((value) => value + 1);
     onPresetChange?.(nextPreset);
   };
@@ -190,7 +210,14 @@ export function ModelViewer({
         }}
       >
         <Suspense fallback={null}>
-          <ViewerScene preset={preset} scrollProgress={scrollProgress} wireframe={wireframe} />
+          <ViewerScene
+            explodeProgress={explodeProgress}
+            lighting={lighting}
+            partDefinitions={partDefinitions}
+            preset={preset}
+            scrollProgress={scrollProgress}
+            wireframe={false}
+          />
         </Suspense>
         <OrbitControls
           ref={controlsRef}
@@ -212,12 +239,13 @@ export function ModelViewer({
         fullscreen={fullscreen}
         onPresetChange={handlePresetChange}
         onReset={resetView}
+        onSetExplodeProgress={setExplodeProgress}
         onToggleFullscreen={toggleFullscreen}
-        onToggleWireframe={() => setWireframe((value) => !value)}
+        partDefinitions={partDefinitions}
         presetOptions={presetOptions}
         title={title}
         subtitle={subtitle}
-        wireframe={wireframe}
+        explodeProgress={explodeProgress}
       />
     </div>
   );

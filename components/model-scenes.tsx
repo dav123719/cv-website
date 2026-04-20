@@ -1,17 +1,44 @@
 "use client";
 
-import { useFrame } from "@react-three/fiber";
-import { ContactShadows, Environment, Grid } from "@react-three/drei";
-import { useMemo, useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import { ContactShadows, Environment, Grid, useGLTF } from "@react-three/drei";
+import { Suspense, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 export type ModelPreset = "sim-wheel" | "elevator" | "pcb" | "truck";
 
 export interface SceneProps {
+  explodeProgress?: number;
+  lighting: SceneLightingSettings;
+  partDefinitions?: readonly ModelPartDefinition[];
   preset: ModelPreset;
   scrollProgress?: number;
   wireframe: boolean;
 }
+
+export type ModelPartDefinition = {
+  id: string;
+  label: string;
+  match: readonly string[];
+};
+
+export type SceneLightingSettings = {
+  accentIntensity: number;
+  ambientIntensity: number;
+  exposure: number;
+  fillIntensity: number;
+  keyIntensity: number;
+  keyPosition: [number, number, number];
+};
+
+export const defaultSceneLighting: SceneLightingSettings = {
+  accentIntensity: 10,
+  ambientIntensity: 0.34,
+  exposure: 0.92,
+  fillIntensity: 0.42,
+  keyIntensity: 1.2,
+  keyPosition: [7, 9, 5],
+};
 
 type MaterialProps = {
   color: string;
@@ -42,23 +69,34 @@ function Material({
   );
 }
 
-function SceneEnvironment() {
+function RendererExposure({ exposure }: { exposure: number }) {
+  const gl = useThree((state) => state.gl);
+
+  gl.toneMapping = THREE.ACESFilmicToneMapping;
+  gl.toneMappingExposure = exposure;
+  gl.outputColorSpace = THREE.SRGBColorSpace;
+
+  return null;
+}
+
+function SceneEnvironment({ lighting }: { lighting: SceneLightingSettings }) {
   return (
     <>
+      <RendererExposure exposure={lighting.exposure} />
       <fog attach="fog" args={["#07070a", 10, 30]} />
       <color attach="background" args={["#050507"]} />
-      <ambientLight intensity={0.45} />
-      <directionalLight position={[7, 9, 5]} intensity={1.65} color="#ffe4e4" />
-      <directionalLight position={[-6, 4, -6]} intensity={0.55} color="#ffffff" />
-      <pointLight position={[0, 3, 5]} intensity={24} color="#e11d48" />
+      <ambientLight intensity={lighting.ambientIntensity} />
+      <directionalLight position={lighting.keyPosition} intensity={lighting.keyIntensity} color="#fff0ee" />
+      <directionalLight position={[-6, 4, -6]} intensity={lighting.fillIntensity} color="#ffffff" />
+      <pointLight position={[0, 3, 5]} intensity={lighting.accentIntensity} color="#e11d48" />
       <Environment preset="city" />
       <Grid
         position={[0, -2.15, 0]}
         args={[24, 24]}
         cellSize={0.75}
         cellThickness={0.75}
-        cellColor="rgba(255,255,255,0.12)"
-        sectionColor="rgba(220,38,38,0.24)"
+        cellColor="#3b3b42"
+        sectionColor="#7f1d1d"
         sectionThickness={1.3}
         fadeDistance={28}
         fadeStrength={1.5}
@@ -85,6 +123,143 @@ function useSubtleMotion(offset = 0.18, baseY = 0) {
     group.position.y = baseY + Math.sin(t * 0.9) * 0.035;
   });
   return ref;
+}
+
+type CadModelProps = {
+  color: string;
+  explodeProgress?: number;
+  roughness?: number;
+  metalness?: number;
+  partDefinitions?: readonly ModelPartDefinition[];
+  rotation?: [number, number, number];
+  targetSize: number;
+  url: string;
+  wireframe: boolean;
+};
+
+function CadModel({
+  color,
+  explodeProgress = 0,
+  roughness = 0.5,
+  metalness = 0.22,
+  partDefinitions = [],
+  rotation = [0, 0, 0],
+  targetSize,
+  url,
+  wireframe
+}: CadModelProps) {
+  const ref = useSubtleMotion(0.08, 0);
+  const gltf = useGLTF(url);
+
+  const { scene, scale, position, partObjects } = useMemo(() => {
+    const cloned = gltf.scene.clone(true);
+    const json = gltf.parser?.json as
+      | {
+          materials?: unknown[];
+          meshes?: Array<{
+            primitives?: Array<{ attributes?: { COLOR_0?: unknown } }>;
+          }>;
+        }
+      | undefined;
+    const sourceHasMaterials = (json?.materials?.length ?? 0) > 0;
+    const sourceHasVertexColors = json?.meshes?.some((mesh) =>
+      mesh.primitives?.some((primitive) => primitive.attributes?.COLOR_0 !== undefined)
+    ) ?? false;
+    const fallbackMaterial = new THREE.MeshStandardMaterial({
+      color,
+      metalness,
+      roughness,
+      wireframe
+    });
+
+    cloned.traverse((node) => {
+      if (!(node instanceof THREE.Mesh)) return;
+      node.castShadow = true;
+      node.receiveShadow = true;
+      if (!sourceHasMaterials && !sourceHasVertexColors) {
+        node.material = fallbackMaterial;
+        return;
+      }
+
+      const materials = Array.isArray(node.material) ? node.material : [node.material];
+      const hasImportedMaterial = materials.some((material) => material && "isMaterial" in material);
+
+      if (!hasImportedMaterial) {
+        node.material = fallbackMaterial;
+        return;
+      }
+
+      materials.forEach((material) => {
+        if ("vertexColors" in material) {
+          material.vertexColors = sourceHasVertexColors;
+        }
+        material.wireframe = wireframe;
+        material.needsUpdate = true;
+      });
+    });
+
+    const box = new THREE.Box3().setFromObject(cloned);
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    box.getSize(size);
+    box.getCenter(center);
+
+    const maxDimension = Math.max(size.x, size.y, size.z) || 1;
+    const modelScale = targetSize / maxDimension;
+    const partRecords: Array<{
+      direction: THREE.Vector3;
+      object: THREE.Object3D;
+      originalPosition: THREE.Vector3;
+    }> = [];
+
+    cloned.traverse((node) => {
+      if (!(node instanceof THREE.Mesh)) return;
+      const partIds = partDefinitions
+        .filter((part) => part.match.some((prefix) => node.name.startsWith(prefix)))
+        .map((part) => part.id);
+
+      if (!partIds.length) return;
+
+      const nodeBox = new THREE.Box3().setFromObject(node);
+      const nodeCenter = new THREE.Vector3();
+      nodeBox.getCenter(nodeCenter);
+      const direction = nodeCenter.sub(center);
+      if (direction.lengthSq() < 0.0001) {
+        direction.set(0, 1, 0);
+      }
+      direction.normalize();
+
+      partRecords.push({
+        direction,
+        object: node,
+        originalPosition: node.position.clone(),
+      });
+    });
+
+    return {
+      scene: cloned,
+      scale: modelScale,
+      position: [-center.x * modelScale, -center.y * modelScale, -center.z * modelScale] as [
+        number,
+        number,
+        number
+      ],
+      partObjects: partRecords,
+    };
+  }, [color, gltf.scene, metalness, partDefinitions, roughness, targetSize, wireframe]);
+
+  useFrame(() => {
+    const distance = scale > 0 ? (explodeProgress * targetSize * 0.27) / scale : 0;
+    partObjects.forEach((record) => {
+      record.object.position.copy(record.originalPosition).addScaledVector(record.direction, distance);
+    });
+  });
+
+  return (
+    <group ref={ref} rotation={rotation}>
+      <primitive object={scene} scale={scale} position={position} />
+    </group>
+  );
 }
 
 function SimWheel({ wireframe, scrollProgress = 0 }: { wireframe: boolean; scrollProgress?: number }) {
@@ -391,19 +566,45 @@ function Truck({ wireframe, scrollProgress = 0 }: { wireframe: boolean; scrollPr
 }
 
 export function ViewerScene({
+  explodeProgress = 0,
+  lighting,
+  partDefinitions,
   preset,
   scrollProgress = 0,
   wireframe,
 }: SceneProps) {
   return (
     <>
-      <SceneEnvironment />
+      <SceneEnvironment lighting={lighting} />
       <group position={[0, 0.12, 0]}>
         {preset === "sim-wheel" ? (
-          <SimWheel wireframe={wireframe} scrollProgress={scrollProgress} />
+          <Suspense fallback={<SimWheel wireframe={wireframe} scrollProgress={scrollProgress} />}>
+            <CadModel
+              color="#111114"
+              explodeProgress={explodeProgress}
+              metalness={0.32}
+              partDefinitions={partDefinitions}
+              roughness={0.42}
+              targetSize={4.2}
+              url="/models/simracing-wheel.glb"
+              wireframe={wireframe}
+            />
+          </Suspense>
         ) : null}
         {preset === "elevator" ? (
-          <Elevator wireframe={wireframe} scrollProgress={scrollProgress} />
+          <Suspense fallback={<Elevator wireframe={wireframe} scrollProgress={scrollProgress} />}>
+            <CadModel
+              color="#d8dde6"
+              explodeProgress={explodeProgress}
+              metalness={0.2}
+              partDefinitions={partDefinitions}
+              roughness={0.48}
+              rotation={[-Math.PI / 2, 0, 0]}
+              targetSize={4.8}
+              url="/models/elevator-model.glb"
+              wireframe={wireframe}
+            />
+          </Suspense>
         ) : null}
         {preset === "pcb" ? <PCB wireframe={wireframe} scrollProgress={scrollProgress} /> : null}
         {preset === "truck" ? <Truck wireframe={wireframe} scrollProgress={scrollProgress} /> : null}
@@ -411,3 +612,6 @@ export function ViewerScene({
     </>
   );
 }
+
+useGLTF.preload("/models/simracing-wheel.glb");
+useGLTF.preload("/models/elevator-model.glb");

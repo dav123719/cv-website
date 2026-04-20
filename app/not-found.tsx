@@ -14,7 +14,7 @@ export default function NotFound() {
         </p>
         <Link
           href="/"
-          className="inline-flex items-center rounded-full border border-[var(--border)] bg-[var(--panel)] px-5 py-3 text-sm font-medium transition-colors duration-300 hover:border-[var(--accent)]/40 hover:bg-[var(--panel-strong)]"
+          className="opaque-button inline-flex items-center rounded-full border border-[var(--border)] px-5 py-3 text-sm font-medium"
         >
           Return to homepage
         </Link>

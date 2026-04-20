@@ -18,7 +18,6 @@ type HeroSectionProps = {
   title: string;
   summary: string;
   actions: HeroAction[];
-  meta?: readonly string[];
   className?: string;
 };
 
@@ -38,7 +37,6 @@ export function HeroSection({
   title,
   summary,
   actions,
-  meta = [],
   className,
 }: HeroSectionProps) {
   const sectionRef = useRef<HTMLElement | null>(null);
@@ -85,10 +83,10 @@ export function HeroSection({
       id="top"
       ref={sectionRef}
       onMouseMove={handleMouseMove}
-      className={cn("relative mx-auto w-full max-w-7xl px-5 pt-8 sm:px-6 lg:px-8 lg:pt-12", className)}
+      className={cn("relative mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-8 lg:pt-10", className)}
     >
       <motion.div
-        className="relative overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--panel)] p-7 shadow-[var(--shadow)] sm:p-10 lg:p-12"
+        className="premium-card relative rounded-[1.75rem] p-6 sm:rounded-[2rem] sm:p-9 lg:p-11"
         initial={reduceMotion ? false : { opacity: 0, y: 24 }}
         animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
         transition={{ duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
@@ -103,12 +101,12 @@ export function HeroSection({
           style={reduceMotion ? undefined : { x: glowX, y: glowY }}
         />
 
-        <motion.p className="section-eyebrow" style={reduceMotion ? undefined : { y: summaryY }}>
+        <motion.p className="section-eyebrow relative z-10" style={reduceMotion ? undefined : { y: summaryY }}>
           {eyebrow}
         </motion.p>
 
-        <motion.div style={reduceMotion ? undefined : { y: titleY }} className="mt-5 max-w-5xl">
-          <h1 className="font-heading text-5xl font-semibold tracking-tight text-[var(--foreground)] sm:text-6xl lg:text-7xl">
+        <motion.div style={reduceMotion ? undefined : { y: titleY }} className="relative z-10 mt-4 max-w-5xl">
+          <h1 className="text-balance font-heading text-[clamp(2.35rem,6.2vw,4.65rem)] font-semibold leading-[0.98] tracking-[-0.05em] text-[var(--foreground)]">
             {headlineParts.map((part, index) => (
               <motion.span
                 key={part}
@@ -132,7 +130,7 @@ export function HeroSection({
         </motion.div>
 
         <motion.p
-          className="mt-6 max-w-3xl text-base leading-8 text-[var(--muted)] sm:text-lg"
+          className="relative z-10 mt-6 max-w-3xl text-pretty text-base leading-8 text-[var(--muted)] sm:text-lg"
           style={reduceMotion ? undefined : { y: summaryY }}
           initial={reduceMotion ? false : { opacity: 0, y: 18 }}
           animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
@@ -142,7 +140,7 @@ export function HeroSection({
         </motion.p>
 
         <motion.div
-          className="mt-8 flex flex-wrap gap-3"
+          className="relative z-10 mt-7 flex flex-wrap gap-3"
           initial={reduceMotion ? false : { opacity: 0, y: 18 }}
           animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
           transition={{ duration: 0.72, delay: 0.24, ease: [0.22, 1, 0.36, 1] }}
@@ -165,27 +163,6 @@ export function HeroSection({
           ))}
         </motion.div>
 
-        {meta.length > 0 ? (
-          <motion.div
-            className="mt-10 flex flex-wrap gap-2 text-xs uppercase tracking-[0.22em] text-[var(--muted)]"
-            initial={reduceMotion ? false : { opacity: 0, y: 18 }}
-            animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-            transition={{ duration: 0.72, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
-          >
-            {meta.map((item, index) => (
-              <motion.span
-                key={item}
-                className="rounded-full border border-[var(--border)]/70 px-3 py-2"
-                whileHover={reduceMotion ? undefined : { y: -2, borderColor: "rgba(229,72,63,0.28)" }}
-                initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-                animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-                transition={{ duration: 0.46, delay: 0.32 + index * 0.05 }}
-              >
-                {item}
-              </motion.span>
-            ))}
-          </motion.div>
-        ) : null}
       </motion.div>
     </section>
   );

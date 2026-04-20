@@ -29,15 +29,22 @@ export default function Home() {
           { href: "#work", label: "View background", variant: "primary", icon: "arrow" },
           { href: "#contact", label: "CV + contact", variant: "secondary", icon: "download" },
         ]}
-        meta={siteContent.heroPoints}
       />
 
-      <div className="mx-auto mt-8 flex w-full max-w-7xl flex-col gap-10 px-5 sm:mt-10 sm:gap-12 sm:px-6 lg:px-8">
+      <div className="mx-auto mt-5 flex w-full max-w-7xl flex-col gap-10 px-5 sm:mt-6 sm:gap-12 sm:px-6 lg:px-8">
         <SectionReveal delay={0.05}>
           <ResumeSection content={siteContent} />
         </SectionReveal>
 
+        <div aria-hidden="true" className="px-1 sm:px-0">
+          <div className="h-px bg-gradient-to-r from-transparent via-[var(--border)]/70 to-transparent" />
+        </div>
+
         <ProjectsSection projects={siteContent.featuredProjects} />
+
+        <div aria-hidden="true" className="px-1 sm:px-0">
+          <div className="h-px bg-gradient-to-r from-transparent via-[var(--border)]/60 to-transparent" />
+        </div>
 
         <SectionReveal delay={0.08}>
           <ToolsSection content={siteContent} />
