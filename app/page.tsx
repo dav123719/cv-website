@@ -61,7 +61,6 @@ export default function Home() {
             phone={siteContent.contact.phone}
             cvPath={siteContent.cv.downloadPath}
             cvNote={siteContent.cv.previewNote}
-            languages={siteContent.languages}
           />
         </SectionReveal>
       </div>

@@ -27,8 +27,8 @@ export function ProjectCard({
       type="button"
       onClick={onSelect}
       className={cn(
-        "group relative flex min-w-0 flex-1 shrink-0 items-center gap-3 overflow-hidden rounded-[1.15rem] border px-4 py-3 text-left",
-        "transition duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/55",
+        "group relative flex min-w-0 flex-1 shrink-0 items-center gap-3 rounded-[1.15rem] border px-4 py-3 text-left",
+        "isolate transition duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/55",
         active
           ? "border-[var(--accent)]/55 bg-[linear-gradient(135deg,var(--accent-soft),transparent_42%),var(--panel-strong)] shadow-[0_16px_30px_rgba(0,0,0,0.16)]"
           : "border-[var(--border)]/80 bg-[var(--panel)] hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--accent)_28%,var(--border))] hover:bg-[var(--control-strong)]",
@@ -47,7 +47,7 @@ export function ProjectCard({
       ) : null}
 
       <span
-        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-80"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px rounded-t-[inherit] bg-gradient-to-r from-transparent via-white/12 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-80"
         aria-hidden="true"
       />
 

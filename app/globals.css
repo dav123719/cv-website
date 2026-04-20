@@ -267,6 +267,34 @@ a {
   opacity: 0.9;
 }
 
+.project-showcase-card {
+  overflow: visible;
+}
+
+.project-showcase-card::before {
+  border-radius: inherit;
+}
+
+.selector-scroll-fade::before,
+.selector-scroll-fade::after {
+  content: "";
+  position: absolute;
+  inset-block: 0.5rem;
+  z-index: 2;
+  width: 2rem;
+  pointer-events: none;
+}
+
+.selector-scroll-fade::before {
+  left: 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--panel-strong) 92%, transparent), transparent);
+}
+
+.selector-scroll-fade::after {
+  right: 0;
+  background: linear-gradient(270deg, color-mix(in srgb, var(--panel-strong) 92%, transparent), transparent);
+}
+
 html.theme-changing body,
 html.theme-changing * {
   transition:
@@ -292,47 +320,190 @@ html.theme-changing * {
   opacity: 1;
 }
 
-.contact-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.9rem;
-  border-radius: 1.35rem;
-  border: 1px solid var(--border);
-  background: var(--panel);
-  padding: 1rem;
+.copy-contact-row {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--control) 92%, var(--panel) 8%);
+  box-shadow:
+    0 12px 26px color-mix(in srgb, var(--foreground) 5%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 9%, transparent);
+  backdrop-filter: blur(10px);
   transition:
-    transform 180ms ease,
+    transform 220ms var(--ease-premium),
+    border-color 220ms ease,
+    background-color 220ms ease,
+    box-shadow 220ms var(--ease-premium);
+}
+
+.copy-contact-row::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(circle at 88% 0%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 44%);
+  opacity: 0;
+  transition: opacity 220ms var(--ease-premium);
+}
+
+.copy-contact-row:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
+  background: color-mix(in srgb, var(--control-strong) 94%, var(--panel) 6%);
+  box-shadow:
+    0 16px 34px color-mix(in srgb, var(--foreground) 8%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 12%, transparent);
+}
+
+.copy-contact-row:hover::after,
+.copy-contact-row--copied::after,
+.copy-contact-row--failed::after {
+  opacity: 1;
+}
+
+.copy-contact-row--copied {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
+}
+
+.copy-contact-row--failed {
+  border-color: color-mix(in srgb, #f59e0b 54%, var(--border));
+}
+
+.copy-contact-row__action {
+  margin-top: 0.1rem;
+  display: inline-flex;
+  min-width: 5.25rem;
+  flex-shrink: 0;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  background: color-mix(in srgb, var(--panel-strong) 90%, transparent);
+  padding: 0.45rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  transition:
     border-color 180ms ease,
+    color 180ms ease,
     background-color 180ms ease;
 }
 
-.cv-preview-shell {
-  position: relative;
+.copy-contact-row:hover .copy-contact-row__action,
+.copy-contact-row--copied .copy-contact-row__action {
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
+  color: var(--foreground);
+}
+
+.project-evidence-shell {
+  border-block: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  padding-block: 1rem;
+}
+
+.project-evidence-preview {
   overflow: hidden;
-  border-radius: 1.5rem;
-  border: 1px solid var(--border);
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 1.35rem;
   background:
-    linear-gradient(145deg, rgba(229, 72, 63, 0.08), transparent 26%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 42%),
-    var(--panel-strong);
+    linear-gradient(180deg, color-mix(in srgb, var(--panel-strong) 88%, transparent), color-mix(in srgb, var(--panel) 94%, transparent)),
+    var(--panel);
+}
+
+.project-evidence-preview__media {
+  position: relative;
+  width: 100%;
+  height: clamp(18rem, 44vw, 34rem);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--panel-strong) 88%, black);
+}
+
+.project-evidence-preview__controls {
+  position: absolute;
+  inset-inline: 1rem;
+  top: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.project-evidence-preview__arrow,
+.project-evidence-preview__counter {
+  pointer-events: auto;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, white 10%);
+  background: color-mix(in srgb, rgba(6, 8, 12, 0.78) 88%, transparent);
+  color: var(--foreground);
+  box-shadow:
+    0 14px 30px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 color-mix(in srgb, white 12%, transparent);
+  backdrop-filter: blur(14px);
+}
+
+.project-evidence-preview__arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  transition:
+    transform 220ms var(--ease-premium),
+    border-color 180ms ease,
+    background-color 180ms ease,
+    opacity 180ms ease;
+}
+
+.project-evidence-preview__arrow:hover {
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
+  background: color-mix(in srgb, var(--control-strong) 76%, transparent);
+}
+
+.project-evidence-preview__arrow:active {
+  transform: scale(0.96);
+}
+
+.project-evidence-preview__arrow:disabled {
+  cursor: default;
+  opacity: 0.38;
+  transform: none;
+}
+
+.project-evidence-preview__counter {
+  align-self: flex-end;
+  min-width: 3.25rem;
+  border-radius: 999px;
+  padding: 0.45rem 0.7rem;
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.project-evidence-preview__caption {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
   padding: 1rem;
 }
 
-.cv-preview-page {
-  position: relative;
-  z-index: 1;
-  border-radius: 1.2rem;
-  border: 1px solid var(--border);
-  background: var(--panel);
-  padding: 1.25rem;
+.project-media-viewport {
+  --media-gap: 0.75rem;
+  --media-card-width: clamp(13rem, 28vw, 18rem);
+  margin-inline: -0.5rem;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 0.5rem;
+  scroll-padding-inline: 0.5rem;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
 }
 
-.project-media-viewport {
-  --media-gap: 0.5rem;
-  --media-card-width: calc((100% - (var(--media-gap) * 2)) / 3);
-  height: 10.25rem;
-  overflow: hidden;
-  border-radius: 1.15rem;
+.project-media-viewport::-webkit-scrollbar {
+  display: none;
 }
 
 .project-media-track {
@@ -340,22 +511,49 @@ html.theme-changing * {
   grid-auto-flow: column;
   grid-auto-columns: var(--media-card-width);
   gap: var(--media-gap);
-  height: 100%;
-  will-change: transform;
+  align-items: stretch;
 }
 
 .project-media-card {
+  min-height: 12.5rem;
   height: 100%;
 }
 
 .project-media-card__visual {
-  height: 4.7rem;
+  aspect-ratio: 16 / 10;
+  height: auto;
+  min-height: 7rem;
 }
 
 @media (max-width: 640px) {
+  .project-evidence-preview__media {
+    height: clamp(14rem, 66vw, 22rem);
+  }
+
+  .project-evidence-preview__caption {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
   .project-media-viewport {
-    --media-card-width: min(78vw, 18rem);
-    height: 10.15rem;
+    --media-card-width: min(82vw, 18rem);
+  }
+
+  .project-media-card {
+    min-height: 12rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .project-media-viewport {
+    overflow-x: visible;
+  }
+
+  .project-media-track {
+    grid-auto-flow: initial;
+    grid-auto-columns: initial;
+    grid-template-columns: repeat(var(--media-count), minmax(0, 1fr));
+    width: 100%;
   }
 }
 

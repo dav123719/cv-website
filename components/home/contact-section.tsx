@@ -1,7 +1,8 @@
 "use client";
 
-import { type ComponentType, type SVGProps } from "react";
-import { ArrowUpRight, Download, GitBranch, Link, Mail, MapPin, Phone } from "lucide-react";
+import { type ComponentType, type SVGProps, useEffect, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { ArrowUpRight, Check, Copy, Download, GitBranch, Link, Mail, MapPin, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SectionHeading } from "@/components/home/section-heading";
 import { trackClientEvent } from "@/lib/client-analytics";
@@ -16,8 +17,6 @@ type ContactSectionProps = {
   phone: string;
   cvPath: string;
   cvNote: string;
-  languages: readonly string[];
-  onTrack?: (type: string, path: string, metadata?: Record<string, string>) => void;
   className?: string;
 };
 
@@ -63,6 +62,90 @@ function DetailRow({ href, label, value, icon: Icon, target, rel, onClick, muted
     <a href={href} target={target} rel={rel} onClick={onClick} className={classes}>
       {content}
     </a>
+  );
+}
+
+type CopyContactRowProps = {
+  label: string;
+  value: string;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
+  target: "email" | "phone";
+};
+
+function CopyContactRow({ label, value, icon: Icon, target }: CopyContactRowProps) {
+  const [status, setStatus] = useState<"idle" | "copied" | "failed">("idle");
+  const reduceMotion = useReducedMotion();
+  const copied = status === "copied";
+  const failed = status === "failed";
+
+  useEffect(() => {
+    if (status === "idle") return;
+    const timeout = window.setTimeout(() => setStatus("idle"), 1600);
+    return () => window.clearTimeout(timeout);
+  }, [status]);
+
+  async function copyValue() {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = value;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+      setStatus("copied");
+      void trackClientEvent("contact_copy", "clipboard", { target });
+    } catch {
+      setStatus("failed");
+    }
+  }
+
+  return (
+    <motion.button
+      type="button"
+      onClick={copyValue}
+      className={cn(
+        "copy-contact-row group flex min-h-[5.25rem] items-start gap-4 rounded-2xl border px-4 py-4 text-left",
+        copied && "copy-contact-row--copied",
+        failed && "copy-contact-row--failed"
+      )}
+      whileTap={reduceMotion ? undefined : { scale: 0.99 }}
+      aria-label={`Copy ${target === "email" ? "email address" : "phone number"}`}
+    >
+      <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--panel-strong)] text-[var(--accent)] transition duration-300 group-hover:scale-105 group-hover:border-[color-mix(in_srgb,var(--accent)_50%,var(--border))]">
+        <Icon className="h-4 w-4" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[0.68rem] uppercase tracking-[0.24em] text-[var(--muted)]">{label}</span>
+        <span className="mt-1 block break-words text-sm font-medium text-[var(--foreground)] sm:truncate">
+          {value}
+        </span>
+      </span>
+      <span className="copy-contact-row__action" aria-live="polite">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.span
+            key={status}
+            className="inline-flex items-center gap-2"
+            initial={reduceMotion ? false : { opacity: 0, y: 4 }}
+            animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+            exit={reduceMotion ? undefined : { opacity: 0, y: -4 }}
+            transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            <span>{copied ? "Copied" : failed ? "Failed" : "Copy"}</span>
+          </motion.span>
+        </AnimatePresence>
+      </span>
+      <span className="sr-only" role="status" aria-live="polite">
+        {copied ? `${label} copied` : failed ? `${label} copy failed` : ""}
+      </span>
+    </motion.button>
   );
 }
 
@@ -121,7 +204,6 @@ export function ContactSection({
   phone,
   cvPath,
   cvNote,
-  languages: _languages,
   className
 }: ContactSectionProps) {
   return (
@@ -145,20 +227,8 @@ export function ContactSection({
             </div>
 
             <div className="mt-5 grid gap-3">
-              <DetailRow
-                href={`mailto:${email}`}
-                label="Email"
-                value={email}
-                icon={Mail}
-                onClick={() => void trackClientEvent("contact_click", "mailto", { target: "email" })}
-              />
-              <DetailRow
-                href={`tel:${phone}`}
-                label="Phone"
-                value={phone}
-                icon={Phone}
-                onClick={() => void trackClientEvent("contact_click", "tel", { target: "phone" })}
-              />
+              <CopyContactRow label="Email" value={email} icon={Mail} target="email" />
+              <CopyContactRow label="Phone" value={phone} icon={Phone} target="phone" />
               <DetailRow href={undefined} label="Location" value={location} icon={MapPin} muted />
             </div>
           </div>
@@ -171,7 +241,7 @@ export function ContactSection({
               </div>
               <a
                 href={cvPath}
-                className="opaque-button inline-flex items-center gap-2 rounded-full border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--foreground)]"
+                className="opaque-button inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--foreground)]"
                 onClick={() => void trackClientEvent("cv_download", cvPath)}
               >
                 <Download className="h-4 w-4" />

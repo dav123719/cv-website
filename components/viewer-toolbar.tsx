@@ -19,7 +19,7 @@ function ToolbarButton({ active, children, onClick, title, ariaLabel }: ToolbarB
       title={title}
       aria-label={ariaLabel}
       aria-pressed={active}
-      className="inline-flex items-center justify-center gap-2 rounded-full px-3.5 py-2 text-[0.8rem] tracking-[0.02em] transition duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.985]"
+      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-3.5 py-2 text-[0.8rem] tracking-[0.02em] transition duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.985]"
       style={{
         appearance: "none",
         border: active ? "1px solid rgba(248,113,113,0.52)" : "1px solid rgba(255,255,255,0.16)",
@@ -180,7 +180,7 @@ export function ViewerToolbar({
         }}
       >
         <div
-          role="tablist"
+          role="group"
           aria-label="Viewer presets"
           style={{
             display: "inline-flex",

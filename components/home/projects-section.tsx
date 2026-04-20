@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { LayoutGroup, motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
-import { ArrowUpRight, Box, Image as ImageIcon, Layers3 } from "lucide-react";
+import { type CSSProperties, type KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, LayoutGroup, motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { ArrowLeft, ArrowRight, Box, Image as ImageIcon, Layers3 } from "lucide-react";
 import { ModelViewer } from "@/components/model-viewer";
 import { ProjectCard } from "@/components/home/project-card";
 import { type FeaturedProject, type ProjectMediaItem, siteContent } from "@/data/site-content";
@@ -63,40 +63,53 @@ function ShowcaseSelector({
   onSelect: (project: FeaturedProject) => void;
   reduceMotion: boolean;
 }) {
+  const activeProjectRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    activeProjectRef.current?.scrollIntoView({
+      block: "nearest",
+      inline: "nearest",
+      behavior: "auto",
+    });
+  }, [activeProject.slug]);
+
   return (
-    <div className="rounded-[1.4rem] border border-[var(--border)]/70 bg-[color-mix(in_srgb,var(--panel-strong)_90%,transparent)] p-3 backdrop-blur-xl">
+    <div className="rounded-[1.4rem] border border-[var(--border)]/70 bg-[color-mix(in_srgb,var(--panel-strong)_90%,transparent)] p-4 backdrop-blur-xl">
       <div className="flex items-center justify-between gap-3 px-1">
         <div>
           <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--muted)]">Project selector</p>
           <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
-            Fixed order, clear selected state, and synced with the viewer controls.
+            Choose the build shown in evidence and the CAD viewer.
           </p>
         </div>
-        <ArrowUpRight className="h-4 w-4 text-[var(--muted)]" />
+        <ArrowRight className="h-4 w-4 text-[var(--muted)]" />
       </div>
 
       <LayoutGroup id="project-selector-tabs">
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="selector-scroll-fade relative -mx-2 mt-3 overflow-hidden">
+          <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-2 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {projects.map((project, index) => {
             const active = project.slug === activeProject.slug;
             const recommended = project.slug === recommendedSlug && !active;
 
             return (
-              <ProjectCard
-                key={project.slug}
-                project={project}
-                index={index}
-                active={active}
-                label={selectorLabel(project)}
-                onSelect={() => onSelect(project)}
-                className={cn(
-                  "min-w-[12rem] snap-start",
-                  recommended && !active && "shadow-[0_10px_20px_rgba(255,255,255,0.04)]",
-                  reduceMotion && "transition-none"
-                )}
-              />
+              <div key={project.slug} ref={active ? activeProjectRef : undefined} className="min-w-[13.5rem] snap-start sm:min-w-[15rem] lg:min-w-0 lg:flex-1">
+                <ProjectCard
+                  project={project}
+                  index={index}
+                  active={active}
+                  label={selectorLabel(project)}
+                  onSelect={() => onSelect(project)}
+                  className={cn(
+                    "h-full w-full",
+                    recommended && !active && "shadow-[0_10px_20px_rgba(255,255,255,0.04)]",
+                    reduceMotion && "transition-none"
+                  )}
+                />
+              </div>
             );
           })}
+          </div>
         </div>
       </LayoutGroup>
     </div>
@@ -123,7 +136,7 @@ function ProjectMediaCard({
       type="button"
       onClick={onSelect}
       className={cn(
-        "project-media-card group relative flex flex-col overflow-hidden rounded-[1rem] border bg-[var(--panel)] p-3 text-left transition duration-200 hover:border-[color-mix(in_srgb,var(--accent)_32%,var(--border))]",
+        "project-media-card group relative flex w-full flex-col rounded-[1rem] border bg-[var(--panel)] p-2.5 text-left transition duration-200 hover:border-[color-mix(in_srgb,var(--accent)_32%,var(--border))]",
         !reduceMotion && "hover:-translate-y-0.5",
         selected
           ? "border-[var(--accent)]/55 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--accent)_28%,transparent)]"
@@ -141,11 +154,13 @@ function ProjectMediaCard({
         />
       ) : null}
       {item.src && item.type === "photo" ? (
-        <img
-          src={item.src}
-          alt={`${project.name}: ${item.label}`}
-          className="project-media-card__visual mb-3 w-full rounded-[0.75rem] object-cover"
-        />
+        <span className="project-media-card__visual mb-3 block w-full overflow-hidden rounded-[0.75rem] border border-[var(--border)]/60 bg-black/20">
+          <img
+            src={item.src}
+            alt={`${project.name}: ${item.label}`}
+            className="h-full w-full object-cover"
+          />
+        </span>
       ) : (
         <div className="project-media-card__visual mb-3 flex w-full items-center justify-center rounded-[0.75rem] border border-dashed border-[var(--border)]/80 bg-[color-mix(in_srgb,var(--panel-strong)_82%,transparent)]">
           <Icon className="h-5 w-5 text-[var(--muted)] transition group-hover:text-[var(--accent)]" />
@@ -170,125 +185,219 @@ function ProjectMediaCard({
   );
 }
 
+function ProjectEvidencePreview({
+  item,
+  project,
+  count,
+  index,
+  hasMultiple,
+  onPrevious,
+  onNext,
+  reduceMotion,
+}: {
+  item: ProjectMediaItem;
+  project: FeaturedProject;
+  count: number;
+  index: number;
+  hasMultiple: boolean;
+  onPrevious: () => void;
+  onNext: () => void;
+  reduceMotion: boolean;
+}) {
+  const Icon = item.type === "model" ? Box : ImageIcon;
+
+  return (
+    <div className="project-evidence-preview">
+      <div className="project-evidence-preview__media">
+        {item.src && item.type === "photo" ? (
+          <img src={item.src} alt={`${project.name}: ${item.label}`} className="h-full w-full object-contain" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_50%_20%,color-mix(in_srgb,var(--accent)_14%,transparent),transparent_44%),color-mix(in_srgb,var(--panel-strong)_88%,black)]">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <span className="flex h-14 w-14 items-center justify-center rounded-full border border-[var(--border)] bg-black/20">
+                <Icon className="h-6 w-6 text-[var(--muted)]" />
+              </span>
+              <span className="max-w-[18rem] text-sm leading-6 text-[var(--muted)]">
+                {item.type === "model" ? "CAD reference available in the viewer below." : "Build photo pending upload."}
+              </span>
+            </div>
+          </div>
+        )}
+        {hasMultiple ? (
+          <div className="project-evidence-preview__controls" aria-label="Large photo navigation">
+            <button
+              type="button"
+              onClick={onPrevious}
+              disabled={index === 0}
+              className={cn("project-evidence-preview__arrow", !reduceMotion && "hover:-translate-x-0.5")}
+              aria-label="Show previous project media"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <span className="project-evidence-preview__counter">
+              {index + 1}/{count}
+            </span>
+            <button
+              type="button"
+              onClick={onNext}
+              disabled={index === count - 1}
+              className={cn("project-evidence-preview__arrow", !reduceMotion && "hover:translate-x-0.5")}
+              aria-label="Show next project media"
+            >
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        ) : null}
+      </div>
+      <div className="project-evidence-preview__caption">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--muted)]">{item.type}</p>
+          <h3 className="mt-1 text-xl font-semibold tracking-tight text-[var(--foreground)]">{item.label}</h3>
+        </div>
+        <p className="max-w-2xl text-sm leading-6 text-[var(--muted)]">{item.caption}</p>
+      </div>
+    </div>
+  );
+}
+
 function ProjectMediaStrip({ project, reduceMotion }: { project: FeaturedProject; reduceMotion: boolean }) {
   const gallery = project.gallery ?? [];
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [windowStart, setWindowStart] = useState(0);
-  const maxStart = Math.max(gallery.length - 3, 0);
-  const hasOverflow = gallery.length > 3;
+  const [direction, setDirection] = useState(1);
+  const hasMultiple = gallery.length > 1;
+  const mediaRailRef = useRef<HTMLDivElement | null>(null);
+  const mediaItemRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const safeSelectedIndex = gallery.length ? Math.min(selectedIndex, gallery.length - 1) : 0;
 
   useEffect(() => {
     setSelectedIndex(0);
-    setWindowStart(0);
   }, [project.slug]);
+
+  useEffect(() => {
+    const rail = mediaRailRef.current;
+    const item = mediaItemRefs.current[safeSelectedIndex];
+    if (!rail || !item) return;
+
+    const railRect = rail.getBoundingClientRect();
+    const itemRect = item.getBoundingClientRect();
+    const targetLeft = rail.scrollLeft + itemRect.left - railRect.left - (rail.clientWidth - itemRect.width) / 2;
+
+    rail.scrollTo({
+      left: Math.max(targetLeft, 0),
+      behavior: reduceMotion ? "auto" : "smooth",
+    });
+  }, [safeSelectedIndex, project.slug, reduceMotion]);
 
   if (!gallery.length) {
     return null;
   }
 
-  const clampWindow = (value: number) => Math.min(Math.max(value, 0), maxStart);
-  const keepSelectedVisible = (nextWindowStart: number) => {
-    setSelectedIndex((current) => {
-      if (current < nextWindowStart) return nextWindowStart;
-      if (current > nextWindowStart + 2) return Math.min(nextWindowStart + 2, gallery.length - 1);
-      return current;
-    });
-  };
-
-  const showPrevious = () => {
-    const next = clampWindow(windowStart - 1);
-    setWindowStart(next);
-    keepSelectedVisible(next);
-  };
-
-  const showNext = () => {
-    const next = clampWindow(windowStart + 1);
-    setWindowStart(next);
-    keepSelectedVisible(next);
-  };
-
   const selectMedia = (index: number) => {
+    setDirection(index >= safeSelectedIndex ? 1 : -1);
     setSelectedIndex(index);
-    if (index < windowStart) {
-      setWindowStart(index);
-      return;
+  };
+
+  const selectedItem = gallery[safeSelectedIndex] ?? gallery[0];
+  const previousMedia = () => {
+    setDirection(-1);
+    setSelectedIndex((current) => Math.max(current - 1, 0));
+  };
+  const nextMedia = () => {
+    setDirection(1);
+    setSelectedIndex((current) => Math.min(current + 1, gallery.length - 1));
+  };
+  const handleGalleryKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      previousMedia();
     }
-    if (index > windowStart + 2) {
-      setWindowStart(clampWindow(index - 2));
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      nextMedia();
     }
   };
 
   return (
-    <div className="border-y border-[var(--border)]/70 py-3" aria-label="Project media gallery">
-      <div className="mb-3 flex flex-col gap-3 px-1 sm:flex-row sm:items-center sm:justify-between">
+    <div className="project-evidence-shell" aria-label="Project media gallery" onKeyDown={handleGalleryKeyDown}>
+      <div className="mb-4 flex flex-col gap-3 px-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--muted)]">Project evidence</p>
           <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
-            Photos stay attached to the selected build; the model remains the interactive CAD view.
+            Build images and CAD references stay attached to the selected project.
           </p>
         </div>
-        {hasOverflow ? (
+        {hasMultiple ? (
           <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
-              onClick={showPrevious}
-              disabled={windowStart === 0}
-              className="opaque-button rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-medium disabled:pointer-events-none disabled:opacity-45"
-              aria-label="Show previous project media"
+              onClick={previousMedia}
+              disabled={safeSelectedIndex === 0}
+              className="opaque-button inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] text-xs font-medium disabled:pointer-events-none disabled:opacity-45"
+              aria-label="Show previous project thumbnail"
             >
-              Prev
+              <ArrowLeft className="h-4 w-4" />
             </button>
-          <span className="rounded-full border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-xs text-[var(--muted)]">
-              {windowStart + 1}-{Math.min(windowStart + 3, gallery.length)}/{gallery.length}
+            <span className="rounded-full border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-xs text-[var(--muted)]">
+              {safeSelectedIndex + 1}/{gallery.length}
             </span>
             <button
               type="button"
-              onClick={showNext}
-              disabled={windowStart >= maxStart}
-              className="opaque-button rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-medium disabled:pointer-events-none disabled:opacity-45"
-              aria-label="Show next project media"
+              onClick={nextMedia}
+              disabled={safeSelectedIndex === gallery.length - 1}
+              className="opaque-button inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] text-xs font-medium disabled:pointer-events-none disabled:opacity-45"
+              aria-label="Show next project thumbnail"
             >
-              Next
+              <ArrowRight className="h-4 w-4" />
             </button>
           </div>
         ) : null}
       </div>
 
-      <div className="project-media-viewport" aria-live="polite">
+      <AnimatePresence mode="wait" initial={false} custom={direction}>
         <motion.div
-          className="project-media-track"
-          animate={
-            reduceMotion
-              ? undefined
-              : {
-                  x: `calc(${windowStart} * (var(--media-card-width) + var(--media-gap)) * -1)`,
-                }
-          }
-          style={
-            reduceMotion
-              ? {
-                  transform: `translateX(calc(${windowStart} * (var(--media-card-width) + var(--media-gap)) * -1))`,
-                }
-              : undefined
-          }
-          transition={{ type: "spring", stiffness: 210, damping: 30, mass: 0.78 }}
+          key={`${project.slug}-${selectedItem.label}`}
+          custom={direction}
+          initial={reduceMotion ? false : { opacity: 0, x: direction * 18, scale: 1.01 }}
+          animate={reduceMotion ? undefined : { opacity: 1, x: 0, scale: 1 }}
+          exit={reduceMotion ? undefined : { opacity: 0, x: direction * -18, scale: 0.995 }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          aria-live="polite"
         >
+          <ProjectEvidencePreview
+            item={selectedItem}
+            project={project}
+            count={gallery.length}
+            index={safeSelectedIndex}
+            hasMultiple={hasMultiple}
+            onPrevious={previousMedia}
+            onNext={nextMedia}
+            reduceMotion={reduceMotion}
+          />
+        </motion.div>
+      </AnimatePresence>
+
+      <div ref={mediaRailRef} className="project-media-viewport mt-4" aria-label="Project thumbnail navigation">
+        <div className="project-media-track" style={{ "--media-count": gallery.length } as CSSProperties}>
           {gallery.map((item, index) => (
             <motion.div
               key={`${project.slug}-${item.label}`}
-              animate={reduceMotion ? undefined : { opacity: index < windowStart || index > windowStart + 2 ? 0.34 : 1 }}
+              ref={(node) => {
+                mediaItemRefs.current[index] = node;
+              }}
+              className="snap-center"
+              animate={reduceMotion ? undefined : { opacity: index === safeSelectedIndex ? 1 : 0.72 }}
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
             >
               <ProjectMediaCard
                 item={item}
                 project={project}
-                selected={index === selectedIndex}
+                selected={index === safeSelectedIndex}
                 onSelect={() => selectMedia(index)}
                 reduceMotion={reduceMotion}
               />
             </motion.div>
           ))}
-        </motion.div>
+        </div>
       </div>
     </div>
   );
@@ -412,7 +521,7 @@ export function ProjectsSection({ className, projects = siteContent.featuredProj
           viewport={{ once: true, amount: 0.12 }}
           transition={{ duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
           style={reduceMotion ? undefined : { y: stageY }}
-          className="premium-card rounded-[2rem] p-4 backdrop-blur-xl sm:p-5"
+          className="premium-card project-showcase-card rounded-[2rem] p-4 backdrop-blur-xl sm:p-5"
         >
           <div className="flex items-center justify-between gap-4 px-1">
             <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-[var(--muted)]">

@@ -116,25 +116,23 @@ export function ModelViewer({
   const controlsRef = useRef<any>(null);
   const cameraRef = useRef<THREE.Camera | null>(null);
   const [explodeProgress, setExplodeProgress] = useState(0);
-  const [preset, setPreset] = useState<ModelPreset>(initialPreset);
+  const [internalPreset, setInternalPreset] = useState<ModelPreset>(initialPreset);
   const [viewerKey, setViewerKey] = useState(0);
   const { fullscreen, toggleFullscreen } = useFullscreenState(containerRef);
   const lighting = defaultSceneLighting;
+  const activePreset = controlledPreset ?? internalPreset;
+  const isControlled = controlledPreset !== undefined;
 
   useEffect(() => {
-    setPreset(initialPreset);
-    setViewerKey((value) => value + 1);
-  }, [initialPreset]);
-
-  useEffect(() => {
-    if (!controlledPreset) return;
-    setPreset(controlledPreset);
-    setViewerKey((value) => value + 1);
-  }, [controlledPreset]);
+    if (!isControlled) {
+      setInternalPreset(initialPreset);
+    }
+  }, [initialPreset, isControlled]);
 
   useEffect(() => {
     setExplodeProgress(0);
-  }, [partDefinitions, preset]);
+    setViewerKey((value) => value + 1);
+  }, [partDefinitions, activePreset]);
 
   useEffect(() => {
     if (process.env.NODE_ENV === "production") {
@@ -144,11 +142,11 @@ export function ModelViewer({
     window.__cvViewerDebug = {
       camera: cameraRef.current ?? undefined,
       controls: controlsRef.current ?? null,
-      preset
+      preset: activePreset
     };
-  }, [preset, viewerKey]);
+  }, [activePreset, viewerKey]);
 
-  const camera = useMemo(() => getPresetCamera(preset), [preset]);
+  const camera = useMemo(() => getPresetCamera(activePreset), [activePreset]);
 
   const resetView = () => {
     setExplodeProgress(0);
@@ -165,9 +163,10 @@ export function ModelViewer({
   };
 
   const handlePresetChange = (nextPreset: ModelPreset) => {
-    setPreset(nextPreset);
+    if (!isControlled) {
+      setInternalPreset(nextPreset);
+    }
     setExplodeProgress(0);
-    setViewerKey((value) => value + 1);
     onPresetChange?.(nextPreset);
   };
 
@@ -191,7 +190,7 @@ export function ModelViewer({
       }}
     >
       <Canvas
-        key={`${preset}-${viewerKey}`}
+        key={`${activePreset}-${viewerKey}`}
         shadows
         dpr={[1, 2]}
         gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
@@ -204,7 +203,7 @@ export function ModelViewer({
             window.__cvViewerDebug = {
               camera: createdCamera,
               controls: controlsRef.current ?? null,
-              preset
+              preset: activePreset
             };
           }
         }}
@@ -214,7 +213,7 @@ export function ModelViewer({
             explodeProgress={explodeProgress}
             lighting={lighting}
             partDefinitions={partDefinitions}
-            preset={preset}
+            preset={activePreset}
             scrollProgress={scrollProgress}
             wireframe={false}
           />
@@ -235,7 +234,7 @@ export function ModelViewer({
       </Canvas>
 
       <ViewerToolbar
-        activePreset={preset}
+        activePreset={activePreset}
         fullscreen={fullscreen}
         onPresetChange={handlePresetChange}
         onReset={resetView}

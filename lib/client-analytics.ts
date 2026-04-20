@@ -1,6 +1,6 @@
 "use client";
 
-function getSessionId() {
+function getClientSessionId() {
   const key = "cv_site_session_id";
   const existing = window.sessionStorage.getItem(key);
 
@@ -26,7 +26,7 @@ export async function trackClientEvent(type: string, path: string, metadata?: Re
       body: JSON.stringify({
         type,
         path,
-        sessionId: getSessionId(),
+        sessionId: getClientSessionId(),
         metadata,
       }),
     });
