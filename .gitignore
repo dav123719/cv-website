@@ -1,2 +1,10 @@
 Thumbs.db
 .DS_Store
+node_modules/
+.next/
+.data/
+.env.local
+tsconfig.tsbuildinfo
+test-results/
+playwright-report/
+dev-server.*.log

@@ -1,0 +1,17 @@
+{
+  "project": "davis-zvigulis-cv",
+  "framework": "next",
+  "surface": "portfolio",
+  "tone": "technical",
+  "skeletons": {
+    "hero-shell": {
+      "description": "Hero, contact, and capability summary blocks"
+    },
+    "project-card": {
+      "description": "Featured project cards with media and metadata"
+    },
+    "cv-panel": {
+      "description": "CV preview and download area"
+    }
+  }
+}
